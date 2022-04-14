@@ -1,0 +1,83 @@
+Microsoft (R) Macro Assembler Version 6.15.8803		    04/14/22 15:37:42
+Quadratic Equation with Floating-Point Numbers		(Lab11.asm)  Page 1 - 1
+
+
+				title	Quadratic Equation with Floating-Point Numbers		(Lab11.asm)
+				;
+				; Cole Cagle
+				; CPEN 3710
+				; April 12, 2022
+				;
+				; This is an assembly language program that is called from a C++ program to calculate the 
+				; quadratic equation. The user inputs the values from the C++ program and this program will
+				; perform calculations and return the result to the C++ program. In short, I/O through C++ and 
+				; calculations in assembly language.
+				;
+				
+				.686
+				.model FLAT, C
+				
+				public quadratic                                                ; quadratic can be called by external code
+				
+ 00000000			.data								; beginning of data (values in the equation)
+ 00000000 00000000		var0 REAL4 0.0
+ 00000004 40000000		var2 REAL4 2.0
+ 00000008 40800000		var4 REAL4 4.0
+ 0000000C 00000000		sqrt REAL4 ?
+				
+ 00000000			.code                                                           ; beginning of code
+ 00000000			quadratic proc                                                  ; beginning of quadratic procedure
+				
+ 00000000  55			push EBP                                                        ; pushes base pointer onto stack
+ 00000001  8B EC		mov EBP, ESP                                                    ; creates a new base pointer
+ 00000003  D9 45 0C		fld REAL4 PTR [EBP+12]						; loads value of B into ST(0)
+ 00000006  D8 4D 0C		fmul REAL4 PTR [EBP+12]                                        	; squares the value of B
+ 00000009  D9 45 08		fld REAL4 PTR [EBP+8]						; loads value of A into ST(0), b^2 is ST(1)
+ 0000000C  D8 4D 10		fmul REAL4 PTR [EBP+16]                                        	; multiplies value of A and C
+ 0000000F  D8 0D 00000008 R	fmul var4							; multiplies 4 by product of ac
+ 00000015  DE E9		fsub 								; subtracts b^2 - 4ac under the square root
+				
+ 00000017  D9 05 00000000 R	fld REAL4 PTR var0						; loads 0.0 into ST(0)
+ 0000001D  DB F1		fcomi ST(0), ST(1)                                              ; compares value in ST(0) to ST(1)
+ 0000001F  D9 1D 00000000 R	fstp var0							; pops 0.0 off of stack
+ 00000025  77 4A		ja JUMP1                                                        ; if below 0, jump to JUMP1
+				
+ 00000027  D9 FA		fsqrt                                                           ; takes the square root of ST(0)
+ 00000029  D9 15 0000000C R	fst sqrt							; stores the square root value in sqrt
+ 0000002F  D9 45 0C		fld REAL4 PTR [EBP+12]						; loads the value of B into ST(0)
+ 00000032  D9 E0		fchs                                                            ; changes the value to negative
+ 00000034  DE C1		fadd								; loads -b+sqrt
+ 00000036  D9 45 08		fld REAL4 PTR [EBP+8]						; loads value of A into ST(0)
+ 00000039  D8 0D 00000004 R	fmul REAL4 PTR var2						; multiplies 2 and A for denominator
+ 0000003F  DC F9		fdiv ST(1), ST(0)                                               ; divides the numerator by the denominator
+ 00000041  D9 1D 00000000 R	fstp var0
+ 00000047  8B 7D 14		mov EDI, [EBP+20]						; gets the pointer for root1
+ 0000004A  D9 1F		fstp REAL4 PTR [EDI]						; stores root1 in memory
+				
+ 0000004C  D9 45 0C		fld REAL4 PTR [EBP+12]						; loads the value of B into ST(0)
+ 0000004F  D9 E0		fchs                                                            ; changes the value to negative
+ 00000051  D9 05 0000000C R	fld sqrt							; loads the value under the square root to ST(0)
+ 00000057  DE E9		fsub								; loads -b-sqrt
+ 00000059  D9 45 08		fld REAL4 PTR [EBP+8]						; loads value of A into ST(0)
+ 0000005C  D8 0D 00000004 R	fmul REAL4 PTR var2						; multiplies 2 and A for denominator
+ 00000062  DC F9		fdiv ST(1), ST(0)                                               ; divides the numerator by the denominator
+ 00000064  D9 1D 00000004 R	fstp var2
+ 0000006A  8B 75 18		mov ESI, [EBP+24]						; gets the pointer for root2
+ 0000006D  D9 1E		fstp REAL4 PTR [ESI]						; stores root2 in memory
+ 0000006F  EB 09		jmp JUMP2                                                       ; jump to JUMP2
+				
+ 00000071			JUMP1:                                                          ; beginning of JUMP1
+ 00000071  5D			pop EBP								; takes base pointer off stack
+ 00000072  B8 00000001		mov EAX, 1                                                      ; moves 1 into EAX
+ 00000077  F7 D8		neg EAX								; makes EAX = -1
+ 00000079  C3			ret								; return to C++ program
+				
+ 0000007A			JUMP2:                                                          ; beginning of JUMP2
+ 0000007A  B8 00000000		mov EAX, 0							; moves 0 into EAX since roots are not complex
+				
+ 0000007F  5D			pop EBP                                                         ; takes EBP off the stack
+				
+ 00000080  C3			ret                                                             ; return to C++ program
+				
+ 00000081			quadratic ENDP                                                  ; stops execution of quadratic proc
+				END                                                             ; end of program
